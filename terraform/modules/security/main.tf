@@ -1,3 +1,14 @@
+# Terraform and AWS provider requirements
+terraform {
+  required_version = ">= 1.10.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
 # Security group for application load balancer
 resource "aws_security_group" "alb" {
   name        = "iaac-alb-sg"

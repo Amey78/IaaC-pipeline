@@ -1,4 +1,14 @@
-# Create ECR repository to store Docker images
+# Terraform and AWS provider requirements
+terraform {
+  required_version = ">= 1.10.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+} # Create ECR repository to store Docker images
 resource "aws_ecr_repository" "app" {
   name = "iaac-pipeline-app"
 

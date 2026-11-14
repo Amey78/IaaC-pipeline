@@ -1,4 +1,14 @@
-# Set minimum and maximum ECS tasks
+# Terraform and AWS provider requirements
+terraform {
+  required_version = ">= 1.10.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+} # Set minimum and maximum ECS tasks
 resource "aws_appautoscaling_target" "ecs" {
   min_capacity       = 2
   max_capacity       = 6

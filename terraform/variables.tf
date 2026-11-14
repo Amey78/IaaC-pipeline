@@ -1,11 +1,5 @@
+# AWS region for deployment
 variable "aws_region" {
+  type    = string
   default = "ap-south-1"
-}
-
-variable "project_name" {
-  default = "iaac-pipeline"
-}
-
-variable "environment" {
-  default = "dev"
 }

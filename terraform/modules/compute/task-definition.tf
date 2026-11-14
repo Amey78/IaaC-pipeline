@@ -1,6 +1,6 @@
 # Define how application container will run
 resource "aws_ecs_task_definition" "app" {
-  family                   = "iaac-pipeline-task"
+  family                   = "iaac-pipeline-task${local.name_suffix}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
 
@@ -32,7 +32,7 @@ resource "aws_ecs_task_definition" "app" {
         logDriver = "awslogs"
 
         options = {
-          "awslogs-group"         = "/ecs/iaac-pipeline"
+          "awslogs-group"         = "/ecs/iaac-pipeline${local.name_suffix}"
           "awslogs-region"        = "ap-south-1"
           "awslogs-stream-prefix" = "ecs"
         }

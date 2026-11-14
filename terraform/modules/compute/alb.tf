@@ -1,6 +1,6 @@
 # Create Application Load Balancer
 resource "aws_lb" "main" {
-  name               = "iaac-pipeline-alb"
+  name               = "iaac-pipeline-alb${local.name_suffix}"
   internal           = false
   load_balancer_type = "application"
 
@@ -14,12 +14,12 @@ resource "aws_lb" "main" {
   security_groups = [var.alb_security_group_id]
 
   tags = {
-    Name = "iaac-pipeline-alb"
+    Name = "iaac-pipeline-alb${local.name_suffix}"
   }
 }
 # Create target group for ECS containers
 resource "aws_lb_target_group" "app" {
-  name        = "iaac-pipeline-tg"
+  name        = "iaac-pipeline-tg${local.name_suffix}"
   port        = 80
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
@@ -31,7 +31,7 @@ resource "aws_lb_target_group" "app" {
   }
 
   tags = {
-    Name = "iaac-pipeline-tg"
+    Name = "iaac-pipeline-tg${local.name_suffix}"
   }
 }
 # Listen for HTTP requests

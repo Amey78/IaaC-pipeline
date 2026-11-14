@@ -10,7 +10,7 @@ terraform {
   }
 } # Create ECR repository to store Docker images
 resource "aws_ecr_repository" "app" {
-  name = "iaac-pipeline-app"
+  name = "iaac-pipeline-app${local.name_suffix}"
 
   # Scan Docker images for vulnerabilities
   image_scanning_configuration {
@@ -24,9 +24,9 @@ resource "aws_ecr_repository" "app" {
 
 # Create ECS cluster to manage containers
 resource "aws_ecs_cluster" "main" {
-  name = "iaac-pipeline-cluster"
+  name = "iaac-pipeline-cluster${local.name_suffix}"
 
   tags = {
-    Name = "iaac-pipeline-cluster"
+    Name = "iaac-pipeline-cluster${local.name_suffix}"
   }
 }

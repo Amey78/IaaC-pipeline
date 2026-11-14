@@ -2,6 +2,13 @@
 .terraform/
 
 # .tfstate files
+# Terraform plan files
+*.tfplan
+
+# Environment secrets
+.env
+.env.*
+
 *.tfstate
 *.tfstate.*
 

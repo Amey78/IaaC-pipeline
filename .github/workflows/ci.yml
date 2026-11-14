@@ -1,0 +1,54 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+  pull_request:
+    branches:
+      - main
+      - staging
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Get project code from GitHub
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # Check Terraform formatting
+      - name: Terraform Format
+        run: terraform fmt -check -recursive
+        working-directory: terraform
+
+      # Download Terraform providers and modules
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: terraform
+
+      # Validate Terraform configuration
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: terraform
+
+      # Install TFLint
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      # Run Terraform lint checks
+      - name: Run TFLint
+        run: |
+          tflint --init
+          tflint --recursive
+        working-directory: terraform
+
+      # Build Docker image
+      - name: Build Docker Image
+        run: docker build -t iaac-pipeline-app:latest ./app

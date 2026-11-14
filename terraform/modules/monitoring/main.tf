@@ -19,7 +19,7 @@ resource "aws_appautoscaling_target" "ecs" {
 
 # Automatically scale based on CPU usage
 resource "aws_appautoscaling_policy" "cpu" {
-  name               = "iaac-pipeline-cpu-scaling"
+  name               = "iaac-pipeline-cpu-scaling${local.name_suffix}"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.ecs.resource_id
   scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension

@@ -4,6 +4,7 @@ name: CD Pipeline
 on:
   push:
     branches:
+      - staging
       - main
     paths:
       - "app/**"
@@ -14,32 +15,97 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+
+    env:
+      AWS_REGION: ap-south-1
+      ACCOUNT_ID: "676591241678"
+      REPOSITORY: ${{ github.ref == 'refs/heads/main' && 'iaac-pipeline-app-production' || 'iaac-pipeline-app-staging' }}
+      CLUSTER: ${{ github.ref == 'refs/heads/main' && 'iaac-pipeline-cluster-production' || 'iaac-pipeline-cluster-staging' }}
+      SERVICE: ${{ github.ref == 'refs/heads/main' && 'iaac-pipeline-service-production' || 'iaac-pipeline-service-staging' }}
+
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push Docker image
-        env:
-          ECR_REGISTRY: 676591241678.dkr.ecr.ap-south-1.amazonaws.com
-          ECR_REPOSITORY: iaac-pipeline-app
+      - name: Build and Push Image
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./app
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          IMAGE="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY:$GITHUB_SHA"
+          docker build -t "$IMAGE" ./app
+          docker push "$IMAGE"
 
-      - name: Deploy to Amazon ECS
+      - name: Deploy and Rollback
         run: |
+          set -e
+
+          IMAGE="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY:$GITHUB_SHA"
+
+          OLD=$(aws ecs describe-services \
+            --cluster "$CLUSTER" --services "$SERVICE" \
+            --query 'services[0].taskDefinition' --output text)
+
+          aws ecs describe-task-definition \
+            --task-definition "$OLD" \
+            --query taskDefinition > old.json
+
+          jq --arg image "$IMAGE" '
+            del(.taskDefinitionArn,.revision,.status,.requiresAttributes,
+                .compatibilities,.registeredAt,.registeredBy)
+            | .containerDefinitions |= map(.image = $image)
+          ' old.json > new.json
+
+          NEW=$(aws ecs register-task-definition \
+            --cli-input-json file://new.json \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+
           aws ecs update-service \
-            --cluster iaac-pipeline-cluster \
-            --service iaac-pipeline-service \
-            --force-new-deployment
+            --cluster "$CLUSTER" --service "$SERVICE" \
+            --task-definition "$NEW"
+
+          for i in $(seq 1 20); do
+            sleep 15
+
+            STATE=$(aws ecs describe-services \
+              --cluster "$CLUSTER" --services "$SERVICE" \
+              --query 'services[0].deployments[?status==`PRIMARY`].rolloutState | [0]' \
+              --output text)
+
+            RUNNING=$(aws ecs describe-services \
+              --cluster "$CLUSTER" --services "$SERVICE" \
+              --query 'services[0].runningCount' --output text)
+
+            DESIRED=$(aws ecs describe-services \
+              --cluster "$CLUSTER" --services "$SERVICE" \
+              --query 'services[0].desiredCount' --output text)
+
+            echo "Check $i: $STATE ($RUNNING/$DESIRED)"
+
+            if [ "$STATE" = "COMPLETED" ] && [ "$RUNNING" = "$DESIRED" ]; then
+              echo "Deployment successful!"
+              exit 0
+            fi
+
+            if [ "$STATE" = "FAILED" ]; then
+              break
+            fi
+          done
+
+          echo "Deployment failed or timed out. Rolling back..."
+
+          aws ecs update-service \
+            --cluster "$CLUSTER" --services "$SERVICE" \
+            --task-definition "$OLD"
+
+          exit 1
 

@@ -11,7 +11,7 @@ terraform {
 }
 # Security group for application load balancer
 resource "aws_security_group" "alb" {
-  name        = "iaac-alb-sg"
+  name        = "iaac-alb-sg${local.name_suffix}"
   description = "Allow HTTP traffic"
   vpc_id      = var.vpc_id
 
@@ -32,12 +32,12 @@ resource "aws_security_group" "alb" {
   }
 
   tags = {
-    Name = "iaac-alb-sg"
+    Name = "iaac-alb-sg${local.name_suffix}"
   }
 }
 # Security group for ECS containers
 resource "aws_security_group" "ecs" {
-  name        = "iaac-ecs-sg"
+  name        = "iaac-ecs-sg${local.name_suffix}"
   description = "Allow traffic from ALB"
   vpc_id      = var.vpc_id
 
@@ -58,6 +58,6 @@ resource "aws_security_group" "ecs" {
   }
 
   tags = {
-    Name = "iaac-ecs-sg"
+    Name = "iaac-ecs-sg${local.name_suffix}"
   }
 }

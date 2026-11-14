@@ -1,6 +1,6 @@
 # Allow ECS tasks to use this role
 resource "aws_iam_role" "ecs_execution" {
-  name = "iaac-pipeline-ecs-execution-role"
+  name = "iaac-pipeline-ecs-execution-role${local.name_suffix}"
 
   # ECS task service is allowed to assume this role
   assume_role_policy = jsonencode({

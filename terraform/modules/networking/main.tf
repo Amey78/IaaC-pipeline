@@ -19,7 +19,7 @@ resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
 
   tags = {
-    Name = "iaac-pipeline-vpc"
+    Name = "iaac-pipeline-vpc${local.name_suffix}"
   }
 }
 
@@ -31,7 +31,7 @@ resource "aws_subnet" "public1" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "public-subnet-1"
+    Name = "public-subnet-1${local.name_suffix}"
   }
 }
 
@@ -43,7 +43,7 @@ resource "aws_subnet" "public2" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "public-subnet-2"
+    Name = "public-subnet-2${local.name_suffix}"
   }
 }
 
@@ -52,7 +52,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "iaac-pipeline-igw"
+    Name = "iaac-pipeline-igw${local.name_suffix}"
   }
 }
 
@@ -66,7 +66,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "public-route-table"
+    Name = "public-route-table${local.name_suffix}"
   }
 }
 
